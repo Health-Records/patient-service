@@ -1,3 +1,17 @@
 spring:
   application:
     name: patient-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/patient-db
+    username: postgres
+    password: 101221
+  jpa:
+    hibernate:
+      ddl-auto: update 
+    show-sql: true 
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9090/realms/patient-management
