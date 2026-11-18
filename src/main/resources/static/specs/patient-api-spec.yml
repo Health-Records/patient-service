@@ -10,224 +10,217 @@ tags:
   - name: Patient
     description: Patient management operations
 paths:
-  /patients:
-    get:
-      tags:
-        - Patient
-      operationId: listPatients
-      summary: List all patients
-      responses:
-        '200':
-          description: Patients retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PatientResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+  /api/v1/auth/patients/register:
     post:
       tags:
         - Patient
-      operationId: createPatient
-      summary: Create a patient
+      operationId: registerPatient
+      summary: Register a patient and create their account
+      description: >
+        Creates a patient account using the email address as the
+        Keycloak username and stores the patient's profile.
+      security: []
+
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatientRequest'
+              $ref: '#/components/schemas/PatientRegistrationRequest'
+
       responses:
         '201':
-          description: Patient created successfully
+          description: Patient registered successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PatientResponse'
+
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid registration request
+
+        '409':
+          description: Email address is already registered
+
         '500':
-          $ref: '#/components/responses/InternalServerError'
-  /patients/{id}:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        description: Patient UUID
-        schema:
-          type: string
-          format: uuid
-    get:
-      tags:
-        - Patient
-      operationId: getPatientById
-      summary: Get a patient by ID
-      responses:
-        '200':
-          description: Patient retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PatientResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    put:
-      tags:
-        - Patient
-      operationId: updatePatient
-      summary: Update a patient
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatientRequest'
-      responses:
-        '200':
-          description: Patient updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PatientResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      tags:
-        - Patient
-      operationId: deletePatient
-      summary: Delete a patient
-      responses:
-        '200':
-          description: Patient deleted successfully
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error
+
+        '503':
+          description: Identity provider is temporarily unavailable
+
 components:
-  responses:
-    BadRequest:
-      description: Invalid request data
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Patient not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalServerError:
-      description: Unexpected server error
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    PatientRequest:
+
+    PatientRegistrationRequest:
       type: object
       required:
-        - name
+        - firstName
+        - lastName
         - dateOfBirth
         - gender
-        - phone
         - email
+        - phone
+        - password
+        - termsAccepted
       properties:
-        name:
+        firstName:
           type: string
           minLength: 1
           maxLength: 100
-          example: Jane Doe
+          example: Jane
+        middleName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Doe
         dateOfBirth:
           type: string
           format: date
           example: '1990-05-20'
         gender:
-          type: string
-          enum:
-            - MALE
-            - FEMALE
-            - OTHER
-          example: FEMALE
-        phone:
-          type: string
-          pattern: '^\+?[1-9][0-9]{6,14}$'
-          example: '+14155552671'
+          $ref: '#/components/schemas/Gender'
         email:
           type: string
           format: email
           maxLength: 255
           example: jane.doe@example.com
+          description: Also used as the Keycloak username.
+        phone:
+          type: string
+          pattern: '^\+?[1-9][0-9]{6,14}$'
+          example: '+14155552671'
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 8
+          maxLength: 64
+          description: >
+            Patient password. Sent to Keycloak for credential
+            management. Never stored in the application database
+            or returned in API responses.
+        bloodGroup:
+          $ref: '#/components/schemas/BloodGroup'
+        address:
+          $ref: '#/components/schemas/Address'
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+        termsAccepted:
+          type: boolean
+          enum: [true]
+          description: Patient must accept the terms to register.
+        isDeleted:
+          type: boolean
+
     PatientResponse:
       type: object
       required:
         - id
-        - name
+        - patientNumber
+        - firstName
+        - lastName
         - dateOfBirth
         - gender
-        - phone
         - email
+        - phone
+        - createdAt
       properties:
         id:
           type: string
           format: uuid
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        name:
+        patientNumber:
           type: string
-          minLength: 1
-          maxLength: 100
-          example: Jane Doe
+          description: Human-readable patient identification number.
+          example: PAT-000123
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
         dateOfBirth:
           type: string
           format: date
-          example: '1990-05-20'
         gender:
-          type: string
-          enum:
-            - MALE
-            - FEMALE
-            - OTHER
-          example: FEMALE
-        phone:
-          type: string
-          pattern: '^\+?[1-9][0-9]{6,14}$'
-          example: '+14155552671'
+          $ref: '#/components/schemas/Gender'
         email:
           type: string
           format: email
-          maxLength: 255
-          example: jane.doe@example.com
-    ErrorResponse:
-      type: object
-      required:
-        - timestamp
-        - status
-        - error
-        - message
-      properties:
-        timestamp:
+        phone:
+          type: string
+        bloodGroup:
+          $ref: '#/components/schemas/BloodGroup'
+        address:
+          $ref: '#/components/schemas/Address'
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+        createdAt:
           type: string
           format: date-time
-          example: '2026-11-13T10:30:00Z'
-        status:
-          type: integer
-          format: int32
-          example: 400
-        error:
+        updatedAt:
           type: string
-          example: Bad Request
-        message:
+          format: date-time
+          nullable: true
+    Gender:
+      type: string
+      enum:
+        - MALE
+        - FEMALE
+        - OTHER
+    BloodGroup:
+      type: string
+      enum:
+        - A_POSITIVE
+        - A_NEGATIVE
+        - B_POSITIVE
+        - B_NEGATIVE
+        - AB_POSITIVE
+        - AB_NEGATIVE
+        - O_POSITIVE
+        - O_NEGATIVE
+    Address:
+      type: object
+      required:
+        - addressLine1
+        - city
+        - country
+      properties:
+        addressLine1:
           type: string
-          example: Invalid patient data
-        path:
+          maxLength: 200
+        addressLine2:
           type: string
-          example: /patients/3fa85f64-5717-4562-b3fc-2c963f66afa6
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        postalCode:
+          type: string
+          maxLength: 20
+        country:
+          type: string
+          maxLength: 100
+
+    EmergencyContact:
+      type: object
+      required:
+        - name
+        - relationship
+        - phone
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        relationship:
+          type: string
+          maxLength: 50
+          example: Spouse
+        phone:
+          type: string
+          pattern: '^\+?[1-9][0-9]{6,14}$'

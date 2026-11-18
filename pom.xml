@@ -28,6 +28,7 @@
 		</scm>
 		<properties>
 			<java.version>21</java.version>
+			<mapstruct.version>1.6.3</mapstruct.version>
 		</properties>
 		<dependencies>
 			<dependency>
@@ -70,7 +71,7 @@
 				<artifactId>postgresql</artifactId>
 				<scope>runtime</scope>
 			</dependency>
-			<dependency>
+			 <dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-data-jpa</artifactId>
 			</dependency>
@@ -103,9 +104,12 @@
 				<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 			</dependency>
 
-
-			
-
+			<!-- mapper and lombok -->
+			<dependency>
+				<groupId>org.mapstruct</groupId>
+				<artifactId>mapstruct</artifactId>
+				<version>${mapstruct.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
@@ -150,10 +154,58 @@
 									<useBeanValidation>true</useBeanValidation>
 									<openApiNullable>false</openApiNullable>
 								</configOptions>
+								<typeMappings>
+									<typeMapping>DateTime=LocalDateTime</typeMapping>
+								</typeMappings>
+								<importMappings>
+									<importMapping>LocalDateTime=java.time.LocalDateTime</importMapping>
+								</importMappings>
 							</configuration>
 						</execution>
 					</executions>
 				</plugin>
+				<plugin>
+					<groupId>com.diffplug.spotless</groupId>
+					<artifactId>spotless-maven-plugin</artifactId>
+					<version>2.43.0</version>
+					<executions>
+					<execution>
+						<id>format-java</id>
+						<goals>
+						<goal>apply</goal>
+						</goals>
+						<phase>validate</phase>
+					</execution>
+					</executions>
+					<configuration>
+					<java>
+						<includes>
+						<include>src/main/java/**/*.java</include>
+						<include>src/test/java/**/*.java</include>
+						</includes>
+						<palantirJavaFormat>
+						<version>2.83.0</version>
+						<style>PALANTIR</style>
+						<formatJavadoc>true</formatJavadoc>
+						</palantirJavaFormat>
+						<importOrder />
+						<removeUnusedImports />
+						<toggleOffOn />
+						<trimTrailingWhitespace />
+						<endWithNewline />
+						<!-- Fixes the double indentation mapping issue -->
+						<indent>
+						<tabs>true</tabs>
+						<spacesPerTab>4</spacesPerTab>
+						</indent>
+						<indent>
+						<spaces>true</spaces>
+						<spacesPerTab>2</spacesPerTab>
+						</indent>
+					</java>
+					</configuration>
+				</plugin>
+				<!-- OpenApi -->
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>build-helper-maven-plugin</artifactId>
@@ -172,6 +224,43 @@
 							</configuration>
 						</execution>
 					</executions>
+				</plugin>
+				<!-- Mapper -->
+				 <plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.mapstruct</groupId>
+								<artifactId>mapstruct-processor</artifactId>
+								<version>${mapstruct.version}</version>
+							</path>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+							</path>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok-mapstruct-binding</artifactId>
+								<version>0.2.0</version>
+							</path>
+							<path>
+								<groupId>org.mapstruct</groupId>
+								<artifactId>mapstruct-processor</artifactId>
+								<version>${mapstruct.version}</version>
+							</path>
+						</annotationProcessorPaths>
+						<compilerArgs>
+							<arg>-Amapstruct.defaultComponentModel=spring</arg>
+						</compilerArgs>
+						<typeMappings>
+							<typeMapping>DateTime=LocalDateTime</typeMapping>
+						</typeMappings>
+						<importMappings>
+							<importMapping>LocalDateTime=java.time.LocalDateTime</importMapping>
+						</importMappings>
+					</configuration>
 				</plugin>
 			</plugins>
 		</build>
